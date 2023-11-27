@@ -3,6 +3,7 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+import functools
 import inspect
 import types
 from abc import ABC, abstractmethod
@@ -499,6 +500,64 @@ class RewriteGenerator(TypeRewriter):
         if args[1] is NoneType and args[2] is NoneType:
             return Iterator[args[0]]
         return typ
+
+
+class RewriteMostCommonBase(TypeRewriter):
+    """
+    Relaces a union of classes by the least common
+    base of its members, provided that
+    parent classes of members are unique leading
+    up to the `object` class (no double inheritance)
+    """
+
+    def compute_bases(self, klass):
+        """
+        Compute list of bases of a given class,
+        starting from (but exluding) the root `object`,
+        ending  (and including) the actual class.
+        """
+        bases = []
+
+        curr_klass = klass
+
+        while curr_klass is not object:
+            bases.append(curr_klass)
+
+            curr_bases = curr_klass.__bases__
+
+            if len(curr_bases) != 1:
+                break
+
+            curr_base = curr_bases[0]
+            curr_klass = curr_base
+        return bases[::-1]
+
+    def merge_common_bases(self, first_bases, second_bases):
+        merged_bases = []
+
+        min_len = min(len(first_bases), len(second_bases))
+
+        first_bases = first_bases[:min_len]
+        second_bases = second_bases[:min_len]
+
+        for first_base, second_base in zip(first_bases, second_bases):
+            if first_base is second_base:
+                merged_bases.append(second_base)
+            else:
+                break
+
+        return merged_bases
+
+    def rewrite_Union(self, union):
+        klasses = union.__args__
+
+        bases = [self.compute_bases(klass) for klass in klasses]
+
+        common_bases = functools.reduce(self.merge_common_bases, bases)
+
+        if common_bases:
+            return common_bases[-1]
+        return union
 
 
 DEFAULT_REWRITER = ChainedRewriter(

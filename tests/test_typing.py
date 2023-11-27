@@ -27,6 +27,7 @@ from monkeytype.typing import (
     RemoveEmptyContainers,
     RewriteConfigDict,
     RewriteLargeUnion,
+    RewriteMostCommonBase,
     RewriteAnonymousTypedDictToDict,
     field_annotations,
     get_type,
@@ -717,6 +718,51 @@ class TestRewriteConfigDict:
     )
     def test_rewrite(self, typ, expected):
         rewritten = RewriteConfigDict().rewrite(typ)
+        assert rewritten == expected
+
+
+class TestRewriteMostCommonBase:
+    class Base:
+        pass
+
+    class Intermediate(Base):
+        pass
+
+    class FirstDerived(Intermediate):
+        pass
+
+    class SecondDerived(Intermediate):
+        pass
+
+    class Unrelated:
+        pass
+
+    class MoreDerived(SecondDerived):
+        pass
+
+    @pytest.mark.parametrize(
+        'typ, expected',
+        [
+            (
+                Union[FirstDerived, SecondDerived],
+                Intermediate,
+            ),
+            (
+                Union[FirstDerived, Base],
+                Base,
+            ),
+            (
+                Union[FirstDerived, MoreDerived],
+                Intermediate,
+            ),
+            (
+                Union[FirstDerived, Unrelated],
+                Union[FirstDerived, Unrelated],
+            ),
+
+        ])
+    def test_rewrite(self, typ, expected):
+        rewritten = RewriteMostCommonBase().rewrite(typ)
         assert rewritten == expected
 
 
