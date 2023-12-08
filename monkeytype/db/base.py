@@ -3,6 +3,8 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
 from typing import Iterable, List, Optional
 
@@ -13,7 +15,7 @@ class CallTraceThunk(metaclass=ABCMeta):
     """A deferred computation that produces a CallTrace or raises an error."""
 
     @abstractmethod
-    def to_trace(self) -> CallTrace:
+    def to_trace(self, store: CallTraceStore) -> CallTrace:
         """Produces the CallTrace."""
         pass
 
