@@ -240,7 +240,7 @@ class SQLiteStore(CallTraceStore):
 
         cur.execute(query, values)
 
-        rows = []
+        rows: List[CallTraceThunk] = []
 
         for row in cur.fetchall():
             (qualname, module, arg_types, return_type, yield_type) = row
