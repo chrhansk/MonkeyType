@@ -209,7 +209,7 @@ class SQLiteStore(CallTraceStore):
 
     def add(self, traces: Iterable[CallTrace]) -> None:
         with self.conn:
-            for trace in serialize_traces(traces):
+            for trace in serialize_traces(traces, self):
                 self.add_trace(trace)
 
     def filter(
